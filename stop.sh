@@ -9,8 +9,16 @@ source "$REPO_ROOT/lib/common.sh"
 echo "Stopping containers ..."
 stop_containers
 
-# Kill any lingering log-tail or docker exec background processes for this container
-pkill -f "docker logs.*$CONTAINER_NAME" 2>/dev/null || true
-pkill -f "docker exec.*$CONTAINER_NAME" 2>/dev/null || true
+# Clean up PID files created by start scripts, if any
+if ls "$REPO_ROOT/logs/"*.pid >/dev/null 2>&1; then
+  for pidfile in "$REPO_ROOT/logs/"*.pid; do
+    pid=$(cat "$pidfile" 2>/dev/null || true)
+    if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+      kill "$pid" 2>/dev/null || true
+      echo "Killed process $pid (from $(basename "$pidfile"))"
+    fi
+    rm -f "$pidfile"
+  done
+fi
 
 echo "Stop complete."

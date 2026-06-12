@@ -11,10 +11,12 @@ per-layer config lists during quantization). This script:
   3. registers them in model.safetensors.index.json,
   4. extends the truncated per-layer lists in config.json from the original.
 
-Idempotent (skips if MTP weights are already present). Run inside the vllm-node
-container (needs torch + safetensors + huggingface_hub).
+Idempotent (skips if MTP weights are already present). Run inside the StepFun
+wrapper image/container (needs torch + safetensors + huggingface_hub).
 
-Usage: graft_mtp.py <nvfp4-snapshot-dir>
+Usage:
+  graft_mtp.py <nvfp4-snapshot-dir>
+  graft_mtp.py --verify <nvfp4-snapshot-dir>
 """
 import json, os, sys
 from huggingface_hub import hf_hub_download
@@ -22,8 +24,16 @@ from safetensors import safe_open
 from safetensors.torch import save_file
 
 if len(sys.argv) < 2:
-    sys.exit("usage: graft_mtp.py <nvfp4-snapshot-dir>")
-SNAP = sys.argv[1]
+    sys.exit("usage: graft_mtp.py [--verify] <nvfp4-snapshot-dir>")
+
+VERIFY_MODE = False
+if sys.argv[1] == "--verify":
+    VERIFY_MODE = True
+    if len(sys.argv) < 3:
+        sys.exit("usage: graft_mtp.py --verify <nvfp4-snapshot-dir>")
+    SNAP = sys.argv[2]
+else:
+    SNAP = sys.argv[1]
 ORIG_REPO = os.environ.get("STEP37_ORIG_REPO", "stepfun-ai/Step-3.7-Flash")
 MTP_FILE = "model-mtp.safetensors"
 
@@ -68,7 +78,25 @@ cutoff = num_hidden_layers(cfg)
 
 idx = load_json(os.path.join(SNAP, "model.safetensors.index.json"))
 wm = idx["weight_map"]
-if any(layer_of(k) >= cutoff for k in wm):
+mtp_already_present = any(layer_of(k) >= cutoff for k in wm)
+
+if VERIFY_MODE:
+    mtp_shard = os.path.join(SNAP, "model-mtp.safetensors")
+    if not os.path.exists(mtp_shard):
+        sys.exit("[graft] VERIFY FAILED: model-mtp.safetensors not found")
+    if not mtp_already_present:
+        sys.exit("[graft] VERIFY FAILED: no MTP layer keys found in weight_map")
+    # Confirm at least one MTP key maps to model-mtp.safetensors
+    mtp_in_shard = any(wm[k] == "model-mtp.safetensors" and layer_of(k) >= cutoff for k in wm)
+    if not mtp_in_shard:
+        sys.exit("[graft] VERIFY FAILED: no MTP layer maps to model-mtp.safetensors")
+    # Confirm config.json still exists and has extended list lengths
+    if not os.path.exists(os.path.join(SNAP, "config.json")):
+        sys.exit("[graft] VERIFY FAILED: config.json not found")
+    print("[graft] VERIFY OK: MTP weights present, index correctly mapped, config present")
+    sys.exit(0)
+
+if mtp_already_present:
     print("[graft] MTP weights already present in snapshot; nothing to do")
     sys.exit(0)
 

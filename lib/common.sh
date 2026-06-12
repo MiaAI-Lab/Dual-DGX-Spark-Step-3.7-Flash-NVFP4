@@ -69,6 +69,7 @@ print_config() {
   echo "Model:        ${MODEL:-unset}"
   echo "Image:        ${IMAGE:-unset}"
   echo "Container:    ${CONTAINER_NAME:-unset}"
+  echo "NNODES:       ${NNODES:-unset}"
   echo "TP Size:      ${TP_SIZE:-unset}"
   echo "Max Seq:      ${MAX_NUM_SEQS:-unset}"
   echo "Port:         ${PORT:-unset}"
@@ -76,3 +77,8 @@ print_config() {
   echo "Master Port:  ${MASTER_PORT:-29501}"
   echo "=================================="
 }
+
+# Auto-load config unless caller explicitly opts out (e.g. setup.sh)
+if [[ "${SKIP_CONFIG_LOAD:-0}" != "1" ]]; then
+  load_config
+fi

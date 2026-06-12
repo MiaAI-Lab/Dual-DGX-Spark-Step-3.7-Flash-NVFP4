@@ -57,8 +57,16 @@ make_node_script() {
 HEAD_SCRIPT="$RUNTIME_DIR/launch-head.sh"
 WORKER_SCRIPT="$RUNTIME_DIR/launch-worker.sh"
 
-make_node_script "$REPO_ROOT/templates/launch-mtp.sh" "$HEAD_SCRIPT" "$TP_SIZE" 0 "$HEAD_IP"
-make_node_script "$REPO_ROOT/templates/launch-mtp.sh" "$WORKER_SCRIPT" "$TP_SIZE" 1 "$HEAD_IP"
+NNODES="${NNODES:-2}"
+make_node_script "$REPO_ROOT/templates/launch-mtp.sh" "$HEAD_SCRIPT" "$NNODES" 0 "$HEAD_IP"
+make_node_script "$REPO_ROOT/templates/launch-mtp.sh" "$WORKER_SCRIPT" "$NNODES" 1 "$HEAD_IP"
+
+if [[ "${DEBUG:-0}" == "1" ]]; then
+  echo "=== Generated head launch script ==="
+  sed -n '1,220p' "$HEAD_SCRIPT"
+  echo "=== Generated worker launch script ==="
+  sed -n '1,220p' "$WORKER_SCRIPT"
+fi
 
 # Start containers on both nodes
 echo "Starting container on head ($HEAD_IP) ..."
@@ -72,6 +80,7 @@ docker run -d \
   -e "NCCL_SOCKET_IFNAME=$ETH_IF" \
   -e "NCCL_IB_HCA=$IB_IF" \
   -e "NCCL_IGNORE_CPU_AFFINITY=1" \
+  -e "NCCL_IB_GID_INDEX=${NCCL_IB_GID_INDEX:-0}" \
   -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
   --entrypoint= \
   "$IMAGE" \
@@ -89,6 +98,7 @@ ssh -o BatchMode=yes -o StrictHostKeyChecking=no "$WORKER_IP" \
      -e 'NCCL_SOCKET_IFNAME=$ETH_IF' \
      -e 'NCCL_IB_HCA=$IB_IF' \
      -e 'NCCL_IGNORE_CPU_AFFINITY=1' \
+     -e 'NCCL_IB_GID_INDEX=\${NCCL_IB_GID_INDEX:-0}' \
      -v '\$HOME/.cache/huggingface:/root/.cache/huggingface' \
      --entrypoint= \
      '$IMAGE' \
@@ -127,6 +137,7 @@ echo "Waiting for API at http://127.0.0.1:$PORT/v1/models (logs follow) ..."
   docker logs -f --tail 0 "$CONTAINER_NAME" 2>&1
 ) | tee "$LOGFILE" &
 LOGS_PID=$!
+echo "$LOGS_PID" > "$REPO_ROOT/logs/start-mtp.pid"
 
 READY=false
 for i in $(seq 1 120); do

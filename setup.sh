@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shellcheck source=/dev/null
-source "$REPO_ROOT/lib/common.sh"
+SKIP_CONFIG_LOAD=1 source "$REPO_ROOT/lib/common.sh"
 
 echo "Checking required commands..."
 for cmd in docker ssh rsync curl jq; do

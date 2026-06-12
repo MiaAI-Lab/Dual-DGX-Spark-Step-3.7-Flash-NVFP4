@@ -47,7 +47,7 @@ graft_local() {
     --entrypoint python3 "$IMAGE" /mod/graft_mtp.py "$SNAP_CTR"
 }
 
-verify_graft() {
+verify_or_rerun_graft() {
   local host_label="$1"
   local is_remote="$2"
   local cmd_prefix=""
@@ -92,7 +92,7 @@ verify_graft() {
 
 # Run grafting locally
 graft_local
-verify_graft "$(hostname)" "false"
+verify_or_rerun_graft "$(hostname)" "false"
 
 # Copy graft script and run on worker
 echo "[graft] Copying graft script to worker ..."
@@ -105,6 +105,6 @@ ssh -o BatchMode=yes -o StrictHostKeyChecking=no "$WORKER_IP" \
     -v /tmp/graft_mtp.py:/mod/graft_mtp.py:ro \
     --entrypoint python3 $IMAGE /mod/graft_mtp.py '$SNAP_CTR'"
 
-verify_graft "$WORKER_IP" "true"
+verify_or_rerun_graft "$WORKER_IP" "true"
 
 echo "[graft] Done. Both nodes now have grafted MTP weights."

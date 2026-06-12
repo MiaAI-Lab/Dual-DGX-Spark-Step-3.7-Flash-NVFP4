@@ -38,7 +38,12 @@ except Exception as e:
 
   if ! $cmd_prefix command -v huggingface-cli >/dev/null 2>&1; then
     echo "[$host_label] huggingface-cli not found. Installing huggingface_hub..."
-    $cmd_prefix python3 -m pip install -U huggingface_hub
+    echo "  Run: python3 -m pip install --user -U huggingface_hub"
+    if ! $cmd_prefix python3 -m pip install --user -U huggingface_hub; then
+      echo "[$host_label] ERROR: pip install failed. Install manually:"
+      echo "  python3 -m pip install --user -U huggingface_hub"
+      exit 1
+    fi
   fi
 
   $cmd_prefix huggingface-cli download "$MODEL"
