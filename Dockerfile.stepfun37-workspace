@@ -1,0 +1,4 @@
+ARG BASE_IMAGE=vllm/vllm-openai:stepfun37
+FROM ${BASE_IMAGE}
+RUN mkdir -p /workspace
+WORKDIR /workspace
