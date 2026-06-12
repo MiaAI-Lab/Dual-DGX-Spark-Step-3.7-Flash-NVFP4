@@ -112,12 +112,14 @@ MODEL=stepfun-ai/Step-3.7-Flash-NVFP4
 PORT=8888
 IMAGE=stepfun37-workspace:latest
 TP_SIZE=2
+NNODES=2
 MAX_MODEL_LEN=262144
 MAX_NUM_BATCHED_TOKENS=8192
 MAX_NUM_SEQS=8
 GPU_MEMORY_UTILIZATION=0.85
 MTP_NUM_SPECULATIVE_TOKENS=3
 MASTER_PORT=29501
+NCCL_IB_GID_INDEX=0
 ```
 
 ## Troubleshooting
@@ -135,7 +137,9 @@ MASTER_PORT=29501
 
 ## Known Working Command / Flags
 
-The following flags were validated on 2× DGX Spark:
+The following flags were validated on 2× DGX Spark. The start scripts generate these commands dynamically (run with `DEBUG=1` to print them).
+
+**Head (rank 0):**
 
 ```bash
 vllm serve stepfun-ai/Step-3.7-Flash-NVFP4 \
@@ -156,8 +160,15 @@ vllm serve stepfun-ai/Step-3.7-Flash-NVFP4 \
   --enable-auto-tool-choice \
   --reasoning-parser step3p5 \
   --tool-call-parser step3p5 \
-  --speculative-config '{"method":"mtp","num_speculative_tokens":3}'
+  --nnodes 2 \
+  --node-rank 0 \
+  --master-addr "$HEAD_IP" \
+  --master-port "$MASTER_PORT"
 ```
+
+**Worker (rank 1):** same plus `--headless`.
+
+**With MTP:** add `--speculative-config '{"method":"mtp","num_speculative_tokens":3}'`.
 
 This setup was validated with `vllm/vllm-openai:stepfun37` via the `stepfun37-workspace:latest` wrapper image. Other vLLM images may not work and may produce BOS loops, garbage output, unsupported flag errors, or startup failures.
 
@@ -174,6 +185,20 @@ Run once on the **head** DGX Spark:
 ```
 
 The script applies the graft locally and over SSH on the worker.
+
+## MTP vLLM Patch
+
+Grafted MTP tensors are BF16. The vLLM `step3p5_mtp.py` drafter normally inherits the model's NVFP4 `quant_config`, which creates packed drafter parameters of different shapes and raises:
+
+```text
+RuntimeError: The size of tensor a (2048) must match the size of tensor b (4096)
+```
+
+Set `DEBUG=1` before starting to print the generated vLLM commands before they run:
+
+```bash
+DEBUG=1 ./start.sh mtp
+```
 
 ## MTP vLLM Patch
 
