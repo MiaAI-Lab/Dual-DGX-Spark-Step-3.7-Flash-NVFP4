@@ -2,6 +2,9 @@
 
 Run [stepfun-ai/Step-3.7-Flash-NVFP4](https://huggingface.co/stepfun-ai/Step-3.7-Flash-NVFP4) on **2× NVIDIA DGX Spark** with vLLM.
 
+
+<a href='https://ko-fi.com/Z8Z3SPLOD' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+
 Features:
 - **Baseline (no-MTP)** serving
 - **MTP speculative decoding** with grafted BF16 weights (`num_speculative_tokens=3`)
