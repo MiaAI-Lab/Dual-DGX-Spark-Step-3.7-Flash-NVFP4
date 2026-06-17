@@ -59,7 +59,7 @@ Run all commands from the **head** DGX Spark. The head node must have passwordle
 Always verify `no-mtp` mode before grafting or starting MTP. If no-MTP does not produce normal text, fix the base image/model setup first before debugging MTP.
 
 ```bash
-git clone MiaAI-Lab/Dual-DGX-Spark-Step-3.7-Flash-NVFP.git
+git clone https://github.com/MiaAI-Lab/Dual-DGX-Spark-Step-3.7-Flash-NVFP4.git
 cd DGX-Spark-Step-3.7-Flash
 cp config.env.example config.env
 nano config.env
