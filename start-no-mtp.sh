@@ -99,7 +99,7 @@ ssh -o BatchMode=yes -o StrictHostKeyChecking=no "$WORKER_IP" \
      -e 'NCCL_IB_HCA=$IB_IF' \
      -e 'NCCL_IGNORE_CPU_AFFINITY=1' \
      -e 'NCCL_IB_GID_INDEX=\${NCCL_IB_GID_INDEX:-0}' \
-     -v '\$HOME/.cache/huggingface:/root/.cache/huggingface' \
+     -v "\$HOME/.cache/huggingface:/root/.cache/huggingface" \
      --entrypoint= \
      '$IMAGE' \
      sleep infinity"
