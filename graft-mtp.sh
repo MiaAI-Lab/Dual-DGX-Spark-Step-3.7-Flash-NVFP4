@@ -66,7 +66,7 @@ verify_or_rerun_graft() {
   if [[ "$is_remote" == "true" ]]; then
     ssh -o BatchMode=yes -o StrictHostKeyChecking=no "$WORKER_IP" \
       "docker run --rm --network host \
-        -v '\$HOME/.cache/huggingface:/root/.cache/huggingface' \
+        -v "\$HOME/.cache/huggingface:/root/.cache/huggingface" \
         -v '$remote_tmp:/mod/graft_mtp.py:ro' \
         --entrypoint python3 '$IMAGE' /mod/graft_mtp.py '$SNAP_CTR'" \
         >/dev/null 2>&1 && result="OK" || status=$?
@@ -101,7 +101,7 @@ scp -o BatchMode=yes -o StrictHostKeyChecking=no "$REPO_ROOT/lib/graft_mtp.py" "
 echo "[graft] Running graft on worker ..."
 ssh -o BatchMode=yes -o StrictHostKeyChecking=no "$WORKER_IP" \
   "docker run --rm --network host \
-    -v '\$HOME/.cache/huggingface:/root/.cache/huggingface' \
+    -v "\$HOME/.cache/huggingface:/root/.cache/huggingface" \
     -v /tmp/graft_mtp.py:/mod/graft_mtp.py:ro \
     --entrypoint python3 $IMAGE /mod/graft_mtp.py '$SNAP_CTR'"
 
